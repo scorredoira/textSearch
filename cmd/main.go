@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	search_engine "textSearch"
@@ -26,14 +25,11 @@ func main() {
 	query := args[0]
 
 	// Get current working directory
-	cwd, err := os.Getwd()
+	searchPath, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error getting current directory: %v\n", err)
 		os.Exit(1)
 	}
-
-	// Create path to kbase directory
-	searchPath := filepath.Join(cwd, "testData")
 
 	// Check if kbase directory exists
 	if _, err := os.Stat(searchPath); os.IsNotExist(err) {
@@ -50,7 +46,7 @@ func main() {
 	// Check if query contains pipe-separated terms
 	var allResults []search_engine.FileMatch
 	fileScores := make(map[string]search_engine.FileMatch)
-	
+
 	if strings.Contains(query, "|") {
 		// Split by pipe and search for each term
 		terms := strings.Split(query, "|")
@@ -59,14 +55,14 @@ func main() {
 			if term == "" {
 				continue
 			}
-			
+
 			// Search for this term
 			results, err := engine.FindRelevantFiles(term, 10)
 			if err != nil {
 				fmt.Printf("Search error for term '%s': %v\n", term, err)
 				continue
 			}
-			
+
 			// Merge results, keeping highest score for each file
 			for _, result := range results {
 				if existing, ok := fileScores[result.Path]; !ok || result.Score > existing.Score {
@@ -80,17 +76,17 @@ func main() {
 				}
 			}
 		}
-		
+
 		// Convert map to slice and sort by score
 		for _, match := range fileScores {
 			allResults = append(allResults, match)
 		}
-		
+
 		// Sort by score descending
 		sort.Slice(allResults, func(i, j int) bool {
 			return allResults[i].Score > allResults[j].Score
 		})
-		
+
 		// Limit to top 10
 		if len(allResults) > 10 {
 			allResults = allResults[:10]
@@ -104,7 +100,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	
+
 	results := allResults
 
 	// Display results
